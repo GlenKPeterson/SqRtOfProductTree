@@ -46,7 +46,8 @@ import kotlin.math.sqrt
  * OK, Now I'm ready to think about representation.
  *
  *  At first I thought I'd have to store the left and right parents, but after
- *  throwing them all in a list, my compiler told me I didn't need that.
+ *  throwing them all in a list, my compiler told me I didn't need parents
+ *  anymore.
  */
 
 class Node(

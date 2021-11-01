@@ -23,13 +23,18 @@ I've had real trouble implementing the LIFO traversal, so I'd go with double-lin
 OK, Now I'm ready to think about representation.
 */
 
-data class Node(
+class Node(
     var leftParent: Node?,
     var rightParent: Node?,
     var value: Double? = null,
     var leftChild: Node? = null,
     var rightChild: Node? = null,
-)
+) {
+    fun children(left: Node, right: Node) {
+        leftChild = left
+        rightChild = right
+    }
+}
 
 /**
  * Making the nodes is hostile to a functional style, so here's the imperative way.
@@ -69,7 +74,41 @@ val allNodes: List<Node> = listOf(
 
 fun square(x: Double) = x * x
 
-fun solveThirdNode(currNode: Node): Unit {
+fun printTree() {
+    println("               .----------.")
+    println("               |${pretty(root.value)}|")
+    println("          .----------.----------.")
+    println("          |${pretty(l1n1.value)}|${pretty(l1n2.value)}|")
+    println("     .----------.----------.----------.")
+    println("     |${pretty(l2n1.value)}|${pretty(l2n2.value)}|${pretty(l2n3.value)}|")
+    println(".----------.----------.----------.----------.")
+    println("|${pretty(l3n1.value)}|${pretty(l3n2.value)}|${pretty(l3n3.value)}|${pretty(l3n4.value)}|")
+    println("'----------'----------'----------'----------'")
+}
+
+fun pretty(x: Double?): String = if (x == null) {
+    "          "
+} else {
+    val s = "$x"
+    when (s.length) {
+        9 -> "$s "
+        8 -> " $s "
+        7 -> "  $s "
+        6 -> "  $s  "
+        5 -> "   $s  "
+        4 -> "   $s   "
+        3 -> "    $s   "
+        2 -> "    $s    "
+        1 -> "     $s    "
+        else -> if (s.length > 10) {
+            s.substring(0, 10)
+        } else {
+            s
+        }
+    }
+}
+
+fun solveThirdNode(currNode: Node) {
     // Do we have 2/3 data points?
     var numDataPoints = 0
     if (currNode.value != null) {
@@ -97,28 +136,29 @@ fun solveThirdNode(currNode: Node): Unit {
 }
 
 fun main() {
-    println(root)
+    // Link the parents to the children
+    root.children(l1n1, l1n2)
 
-    // Visit each node once, top to bottom, assigning parents
-    allNodes.forEach {
-        val lp = it.leftParent
-        if (lp != null) {
-            println("left parent: $lp")
-            lp.rightChild = it
-        }
-        val rp = it.rightParent
-        if (rp != null) {
-            println("right parent: $rp")
-            rp.leftChild = it
-        }
-    }
+    l1n1.children(l2n1, l2n2)
+    l1n2.children(l2n2, l2n3)
 
-//    println(root)
+    l2n1.children(l3n1, l3n2)
+    l2n2.children(l3n2, l3n3)
+    l2n3.children(l3n3, l3n4)
 
-//    // Visit each node once, top to bottom
-//    allNodes.forEach { solveThirdNode(it) }
-//    // Visit each node once, bottom to top
-//    allNodes.reversed().forEach { solveThirdNode(it) }
+    println("\nProblem:")
+    printTree()
 
-//    println(root)
+
+    // Visit each node once, top to bottom
+    allNodes.forEach { solveThirdNode(it) }
+
+    println("\nSolved Children:")
+    printTree()
+
+    // Visit each node once, bottom to top
+    allNodes.reversed().forEach { solveThirdNode(it) }
+
+    println("\nSolution:")
+    printTree()
 }

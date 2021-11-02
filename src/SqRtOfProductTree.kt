@@ -17,7 +17,7 @@ import kotlin.math.sqrt
  * '----------'----------'----------'----------'
  *
  * This can be represented as a tree where each parent has 0 or 2 children.
- * It's built evenly, and it's 4 nodes deep.
+ * It's built evenly, and is 4 nodes deep.
  *
  * There are several problems here:
  *  - Represent the data.  Object-oriented programming suggests this has to go
@@ -36,12 +36,17 @@ import kotlin.math.sqrt
  * c2 = p^2/c1
  *
  * I can think of 3 ways to traverse the tree:
- *  - Doubly-link the Nodes, so that each each parent knows how to find its
- *    children and each child its parent.
+ *  - Doubly-link the Nodes, so that each parent knows how to find its
+ *    children and each child its parent.  Walk the resulting DAG repeatedly
+ *    until it is entirely solved.
  *  - Stop from the top and use a LIFO stack to store pairs of Parent and
  *    Child-number that you're currently visiting. I've had real trouble
  *    implementing the LIFO traversal, so I'd go with double-linking.
- *  - Throw the nodes in a list and don't worry about it.
+ *  - Throw the nodes in a list in top-down order.  Make top-down passes
+ *    until no new nodes are solved, then make bottom-up passes
+ *    until the root node is solved.
+ *  - Throw the nodes in a set and remove them as they are solved.
+ *    Just iterate the set repeatedly until all are solved.
  *
  * OK, Now I'm ready to think about representation.
  *
@@ -86,13 +91,6 @@ val l1n2 = Node(l2n2, null, l2n3)
 
 val root = Node(l1n1, null, l1n2)
 
-val allNodes: List<Node> = listOf(
-    root,
-    l1n1, l1n2,
-    l2n1, l2n2, l2n3,
-    l3n1, l3n2, l3n3, l3n4,
-)
-
 fun square(x: Double) = x * x
 
 fun printTree() {
@@ -132,8 +130,10 @@ fun pretty(x: Double?): String = if (x == null) {
 /**
  * When we have 2 out of the 3 data points (parent and 2 children)
  * we can solve for the third.
+ *
+ * @return true if solved
  */
-fun solveThirdNode(currNode: Node) {
+fun solveThirdNode(currNode: Node): Boolean {
     // Do we have 2/3 data points?
     var numDataPoints = 0
     if (currNode.value != null) {
@@ -157,21 +157,44 @@ fun solveThirdNode(currNode: Node) {
         } else {
             rightChild!!.value = square(currNode.value!!) / leftChild.value!!
         }
+        // We just solved the node, so return true.
+        return true
     }
+    // If the current node has no children and has a value, it is solved.
+    // If it has unsolved children or is missing a value, it is unsolved.
+    return currNode.value != null &&
+            leftChild == null
 }
 
 fun main() {
     println("\nProblem:")
     printTree()
 
-    // Visit each node once, top to bottom
-    allNodes.forEach { solveThirdNode(it) }
+    // Use a mutable set to track unsolved nodes.
+    // When this is empty, we are done.
+    // An unsolved node is one that has a value and either no children,
+    // or both children have values.
+    // Just put them all in to start.
+    val unsolvedNodes: MutableSet<Node> = mutableSetOf(
+        root,
+        l1n1, l1n2,
+        l2n1, l2n2, l2n3,
+        l3n1, l3n2, l3n3, l3n4,
+    )
 
-    println("\nSolved Children:")
-    printTree()
-
-    // Visit each node once, bottom to top
-    allNodes.reversed().forEach { solveThirdNode(it) }
+    while (unsolvedNodes.isNotEmpty()) {
+        // .toList() here is to prevent us from modifying the mutable
+        // unsolvedNodes set while we are iterating it.
+        // Could randomizing the list order speed up the processing?
+        unsolvedNodes
+            .toList()
+            .forEach {
+            val nodeIsSolved: Boolean = solveThirdNode(it)
+            if (nodeIsSolved) {
+                unsolvedNodes.remove(it)
+            }
+        }
+    }
 
     println("\nSolution:")
     printTree()
